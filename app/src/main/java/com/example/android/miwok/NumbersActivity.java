@@ -15,6 +15,7 @@ public class NumbersActivity extends AppCompatActivity {
 
     private MediaPlayer mMediaPlayer;
     private AudioManager mAudioManager;
+
     /**
      * * This listener detects sound focus changes
      */
