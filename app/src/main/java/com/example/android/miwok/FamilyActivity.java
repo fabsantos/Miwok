@@ -1,5 +1,7 @@
 package com.example.android.miwok;
 
+import android.content.Context;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -12,6 +14,27 @@ import java.util.ArrayList;
 public class FamilyActivity extends AppCompatActivity {
 
     private MediaPlayer mMediaPlayer;
+    private AudioManager mAudioManager;
+
+    /**
+     * * This listener detects sound focus changes
+     */
+
+    private AudioManager.OnAudioFocusChangeListener afChangeListener = new AudioManager.OnAudioFocusChangeListener() {
+        public void onAudioFocusChange(int focusChange) {
+            if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+                //We can start the mediaplayer
+                mMediaPlayer.start();
+            } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+                //Media player will stop, just needs to be released
+                releaseMediaPlayer();
+            } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT || focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+                mMediaPlayer.pause();
+                //So that we restart the file when the user comes back
+                mMediaPlayer.seekTo(0);
+            }
+        }
+    };
 
     /**
      * * This listener gets triggered when the {@link MediaPlayer} has completed playing
@@ -22,6 +45,8 @@ public class FamilyActivity extends AppCompatActivity {
         public void onCompletion(MediaPlayer mediaPlayer) {
             // Now that the sound file has finished playing, release the media player resources.
             releaseMediaPlayer();
+            //And abandon Audio Focus
+            mAudioManager.abandonAudioFocus(afChangeListener);
         }
     };
 
@@ -57,11 +82,17 @@ public class FamilyActivity extends AppCompatActivity {
                 releaseMediaPlayer();
                 //Get a clicked item position and the corresponding sound resource
                 int soundResourceID = words.get(position).getSoundResourceID();
-                //Create and start a player for the sound resource
-                mMediaPlayer = MediaPlayer.create(FamilyActivity.this, soundResourceID);
-                mMediaPlayer.start();
-                mMediaPlayer.setOnCompletionListener(mCompletionListener);
-
+                //Create an instance of Audio Manager to request audio focus
+                mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+                //Request audio focus
+                int focusResult = mAudioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+                //Check if focus was granted
+                if (focusResult == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                    //Create and start a player for the sound resource
+                    mMediaPlayer = MediaPlayer.create(FamilyActivity.this, soundResourceID);
+                    mMediaPlayer.start();
+                    mMediaPlayer.setOnCompletionListener(mCompletionListener);
+                }
             }
 
         });
