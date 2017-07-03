@@ -45,8 +45,6 @@ public class FamilyActivity extends AppCompatActivity {
         public void onCompletion(MediaPlayer mediaPlayer) {
             // Now that the sound file has finished playing, release the media player resources.
             releaseMediaPlayer();
-            //And abandon Audio Focus
-            mAudioManager.abandonAudioFocus(afChangeListener);
         }
     };
 
@@ -54,6 +52,9 @@ public class FamilyActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.word_list);
+
+        //Create an instance of Audio Manager to request audio focus
+        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         //Creates the ArrayList of Miwok Family Members
         final ArrayList<Word> words = new ArrayList<Word>();
@@ -82,8 +83,6 @@ public class FamilyActivity extends AppCompatActivity {
                 releaseMediaPlayer();
                 //Get a clicked item position and the corresponding sound resource
                 int soundResourceID = words.get(position).getSoundResourceID();
-                //Create an instance of Audio Manager to request audio focus
-                mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
                 //Request audio focus
                 int focusResult = mAudioManager.requestAudioFocus(afChangeListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
                 //Check if focus was granted
@@ -118,6 +117,10 @@ public class FamilyActivity extends AppCompatActivity {
             // setting the media player to null is an easy way to tell that the media player
             // is not configured to play an audio file at the moment.
             mMediaPlayer = null;
+
+            //It's safe to abandon Audio Focus because the media player was released and set to null
+            mAudioManager.abandonAudioFocus(afChangeListener);
+
         }
     }
 
